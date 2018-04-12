@@ -1,18 +1,26 @@
 package com.nzarudna.tweetstestapp.dependency
 
+import android.content.Context
+import android.content.SharedPreferences
+import com.nzarudna.tweetstestapp.R
 import com.nzarudna.tweetstestapp.TwitterAuthManager
 import dagger.Module
 import dagger.Provides
-import javax.inject.Singleton
 
 /**
  * Created by Nataliia on 12.04.2018.
  */
 @Module
-class AppModule {
+class AppModule(var mContext: Context) {
 
     @Provides
     fun provideTwitterAuthManager() : TwitterAuthManager {
-        return TwitterAuthManager()
+        return TwitterAuthManager(provideSharedPreferences())
+    }
+
+    @Provides
+    fun provideSharedPreferences() : SharedPreferences {
+        val preferenceFile = mContext.getString(R.string.tweets_preferences_file)
+        return mContext.getSharedPreferences(preferenceFile, Context.MODE_PRIVATE)
     }
 }

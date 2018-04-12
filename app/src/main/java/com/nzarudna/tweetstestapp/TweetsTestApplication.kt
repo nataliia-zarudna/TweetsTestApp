@@ -2,6 +2,7 @@ package com.nzarudna.tweetstestapp
 
 import android.app.Application
 import com.nzarudna.tweetstestapp.dependency.AppComponent
+import com.nzarudna.tweetstestapp.dependency.AppModule
 import com.nzarudna.tweetstestapp.dependency.DaggerAppComponent
 
 /**
@@ -10,6 +11,9 @@ import com.nzarudna.tweetstestapp.dependency.DaggerAppComponent
 class TweetsTestApplication : Application() {
 
     val appComponent: AppComponent by lazy {
-        DaggerAppComponent.create()
+        DaggerAppComponent
+                .builder()
+                .appModule(AppModule(this))
+                .build()
     }
 }

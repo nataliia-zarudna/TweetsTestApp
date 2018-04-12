@@ -9,7 +9,7 @@
         tools:context="com.nzarudna.tweetstestapp.TimelineActivity">
 
         <WebView
-            android:id="@+id/login_view"
+            android:id="@+id/loginWebView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 

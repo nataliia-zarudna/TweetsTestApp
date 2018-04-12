@@ -11,8 +11,9 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.android.volley.Response
+import com.nzarudna.tweetstestapp.R.id.login_view
 import com.nzarudna.tweetstestapp.databinding.FragmentTimelineBinding
-import kotlinx.android.synthetic.main.fragment_timeline.*
+//import kotlinx.android.synthetic.main.fragment_timeline.*
 
 /**
  * Created by Nataliia on 11.04.2018.

@@ -10,4 +10,7 @@ class TimelineViewModel : ViewModel() {
 
     @Inject lateinit var twitterAuthManager : TwitterAuthManager
 
+    interface TimelineViewModelObserver {
+        fun loadURL(url: String)
+    }
 }

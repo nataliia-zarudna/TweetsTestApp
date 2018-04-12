@@ -3,7 +3,6 @@ package com.nzarudna.tweetstestapp
 import android.content.Context
 import android.util.Base64
 import android.util.Log
-import com.android.volley.AuthFailureError
 import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.VolleyError
@@ -17,6 +16,8 @@ import java.util.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import javax.inject.Singleton
+import javax.xml.transform.ErrorListener
+import kotlin.collections.HashMap
 
 /**
  * Created by Nataliia on 12.04.2018.
@@ -29,17 +30,56 @@ class TwitterAuthManager {
     private val AUTH_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token"
     private val AUTH_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token"
 
-    fun getRequestToken(context: Context, listener: Response.Listener<String>, oauthToken: String?, oauthVerifier: String?) {
+    private val OAUTH_CALLBACK_HEADER = "oauth_callback"
 
-        val url = if (oauthToken == null) AUTH_REQUEST_TOKEN_URL else AUTH_ACCESS_TOKEN_URL
+    fun getRequestToken(context: Context, obtainAuthTokenListener: ObtainAuthTokenListener) {
 
-        val request = object : StringRequest(Request.Method.POST, url,
-                listener,
-                object : Response.ErrorListener {
-                    override fun onErrorResponse(error: VolleyError) {
-                        Log.e(TAG, "onErrorResponse " + String(error.networkResponse.data, StandardCharsets.UTF_8), error)
-                    }
-                }) {
+        val additionalHeaders = HashMap<String, String>()
+        additionalHeaders.put(OAUTH_CALLBACK_HEADER, BuildConfig.CALLBACK_URL);
+
+        performAuthRequest(context, AUTH_REQUEST_TOKEN_URL, additionalHeaders, null,
+                Response.Listener<String> { response ->
+
+                    val oauthToken = getResponseParamValue(response, "oauth_token")
+                    obtainAuthTokenListener.onObtainToken(oauthToken)
+                },
+                Response.ErrorListener { error ->
+                    Log.e(TAG, "onErrorResponse " + String(error.networkResponse.data, StandardCharsets.UTF_8), error)
+
+                    obtainAuthTokenListener.onError(error)
+                })
+    }
+
+    fun getAuthToken(context: Context, oauthToken: String, oauthVerifier: String, obtainAuthTokenListener: ObtainAuthTokenListener) {
+
+        val additionalHeaders = HashMap<String, String>()
+        additionalHeaders.put("oauth_token", oauthToken)
+
+        val requestParams = HashMap<String, String>()
+        additionalHeaders.put("oauth_verifier", oauthVerifier)
+
+        performAuthRequest(context, AUTH_ACCESS_TOKEN_URL, additionalHeaders, requestParams,
+                Response.Listener<String> { response ->
+
+                    val authVerifier = getResponseParamValue(response, "oauth_verifier")
+                    obtainAuthTokenListener.onObtainToken(authVerifier)
+                },
+                Response.ErrorListener { error ->
+                    Log.e(TAG, "onErrorResponse " + String(error.networkResponse.data, StandardCharsets.UTF_8), error)
+
+                    obtainAuthTokenListener.onError(error)
+                })
+    }
+
+    private fun performAuthRequest(context: Context, url: String, additionalHeaders: Map<String, String>?,
+                           requestParams: Map<String, String>?,
+                           listener: Response.Listener<String>, errorListener: Response.ErrorListener
+            /*oauthToken: String?, oauthVerifier: String?*/) {
+
+        //val url = if (oauthToken == null) AUTH_REQUEST_TOKEN_URL else AUTH_ACCESS_TOKEN_URL
+
+        val request = object : StringRequest(Request.Method.POST, url, listener, errorListener) {
+
             override fun getHeaders(): MutableMap<String, String> {
 
                 val oauthHeaders = TreeMap<String, String>()
@@ -53,11 +93,11 @@ class TwitterAuthManager {
 
                 oauthHeaders.put("oauth_version", "1.0")
 
-                if (oauthToken != null) {
+                /*if (oauthToken != null) {
                     oauthHeaders.put("oauth_token", oauthToken)
                 } else {
                     oauthHeaders.put("oauth_callback", BuildConfig.CALLBACK_URL)
-                }
+                }*/
 
                 var signature = ""
                 try {
@@ -83,13 +123,18 @@ class TwitterAuthManager {
                 return headers
             }
 
-            override fun getParams(): MutableMap<String, String> {
+            override fun getParams(): Map<String, String> {
 
-                val params = HashMap<String, String>()
+                /*val params = HashMap<String, String>()
                 if (oauthVerifier != null) {
                     params.put("oauth_verifier", oauthVerifier)
                 }
-                return params
+                return params*/
+                if (requestParams != null) {
+                    return requestParams
+                } else {
+                    return super.getParams()
+                }
             }
         }
 
@@ -118,7 +163,7 @@ class TwitterAuthManager {
                     .append(key)
                     .append('=')
 
-            val value = if ("oauth_callback" == key) URLEncoder.encode(allParams[key]) else allParams[key]
+            val value = if (OAUTH_CALLBACK_HEADER == key) URLEncoder.encode(allParams[key]) else allParams[key]
             paramsSignaturePart.append(value)
                     .append('&')
         }
@@ -172,5 +217,10 @@ class TwitterAuthManager {
         return null
     }
 
+    interface ObtainAuthTokenListener {
 
+        fun onObtainToken(authToken: String?)
+
+        fun onError(e: Throwable)
+    }
 }

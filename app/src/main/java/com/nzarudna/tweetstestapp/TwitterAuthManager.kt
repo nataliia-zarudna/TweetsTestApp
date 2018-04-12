@@ -62,7 +62,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         requestToken.enqueue(object : Callback<String> {
 
             override fun onResponse(call: Call<String>?, response: retrofit2.Response<String>?) {
-                val oauthToken = getResponseParamValue(response?.body(), OAUTH_TOKEN_HEADER)
+                val oauthToken = getResponseParamValue("", OAUTH_TOKEN_HEADER)
                 obtainAuthTokenListener.onObtainToken(oauthToken)
             }
 

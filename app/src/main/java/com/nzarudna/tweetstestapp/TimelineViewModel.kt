@@ -12,7 +12,7 @@ class TimelineViewModel : ViewModel() {
     @Inject lateinit var mTwitterAuthManager : TwitterAuthManager
 
     fun authorize(context: Context, observer: TimelineViewModelObserver?) {
-        mTwitterAuthManager.getRequestToken(context, object: TwitterAuthManager.ObtainAuthTokenListener {
+        mTwitterAuthManager.getRequestToken(object: TwitterAuthManager.ObtainAuthTokenListener {
 
             override fun onObtainToken(authToken: String?) {
                 if (authToken == null) {
@@ -33,7 +33,7 @@ class TimelineViewModel : ViewModel() {
     fun onWebPageFinished(context: Context, url: String, observer: TimelineViewModelObserver?) {
 
         if (url.startsWith(BuildConfig.CALLBACK_URL)) {
-            mTwitterAuthManager.getAuthToken(context, url, object: TwitterAuthManager.ObtainAuthTokenListener {
+            mTwitterAuthManager.getAuthToken(url, object: TwitterAuthManager.ObtainAuthTokenListener {
 
                 override fun onObtainToken(authToken: String?) {
                     val d = 1

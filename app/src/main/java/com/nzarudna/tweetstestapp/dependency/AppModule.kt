@@ -16,7 +16,7 @@ class AppModule(var mContext: Context) {
 
     @Provides
     fun provideTwitterAuthManager() : TwitterAuthManager {
-        return TwitterAuthManager(provideSharedPreferences(), mContext)
+        return TwitterAuthManager(provideSharedPreferences(), mContext, provideTwitterApi())
     }
 
     @Provides

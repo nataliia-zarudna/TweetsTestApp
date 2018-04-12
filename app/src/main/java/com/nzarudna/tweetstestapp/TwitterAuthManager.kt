@@ -8,6 +8,8 @@ import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import retrofit2.Call
+import retrofit2.Callback
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.InvalidKeyException
@@ -23,7 +25,9 @@ import kotlin.collections.HashMap
  * Created by Nataliia on 12.04.2018.
  */
 @Singleton
-class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPreferences) {
+class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPreferences,
+                                             val mContext: Context,
+                                             val mTwitterApi: TwitterApi) {
 
     private val TAG = "TwitterAuthManager"
 
@@ -48,12 +52,27 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
     private val USER_ID_PARAM = "user_id"
     private val SCREEN_NAME_PARAM = "screen_name"
 
-    fun getRequestToken(context: Context, obtainAuthTokenListener: ObtainAuthTokenListener) {
+    fun getRequestToken(obtainAuthTokenListener: ObtainAuthTokenListener) {
 
         val additionalHeaders = HashMap<String, String>()
-        additionalHeaders.put(OAUTH_CALLBACK_HEADER, BuildConfig.CALLBACK_URL);
+        additionalHeaders.put(OAUTH_CALLBACK_HEADER, BuildConfig.CALLBACK_URL)
 
-        performAuthRequest(context, AUTH_REQUEST_TOKEN_URL, additionalHeaders, null,
+        val oauthHeaders: String = getOAuthHeader(AUTH_REQUEST_TOKEN_URL, additionalHeaders, null)
+        val requestToken: Call<String> = mTwitterApi.getRequestToken(oauthHeaders)
+        requestToken.enqueue(object : Callback<String> {
+
+            override fun onResponse(call: Call<String>?, response: retrofit2.Response<String>?) {
+                val oauthToken = getResponseParamValue(response?.body(), OAUTH_TOKEN_HEADER)
+                obtainAuthTokenListener.onObtainToken(oauthToken)
+            }
+
+            override fun onFailure(call: Call<String>?, t: Throwable?) {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+        })
+
+        /*performSignedRequest(AUTH_REQUEST_TOKEN_URL, additionalHeaders, null,
                 Response.Listener<String> { response ->
 
                     val oauthToken = getResponseParamValue(response, OAUTH_TOKEN_HEADER)
@@ -63,10 +82,10 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                     Log.e(TAG, "onErrorResponse " + String(error.networkResponse.data, StandardCharsets.UTF_8), error)
 
                     obtainAuthTokenListener.onError(error)
-                })
+                })*/
     }
 
-    fun getAuthToken(context: Context, callbackResultURL: String, obtainAuthTokenListener: ObtainAuthTokenListener) {
+    fun getAuthToken(callbackResultURL: String, obtainAuthTokenListener: ObtainAuthTokenListener) {
 
         val urlParams = callbackResultURL.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
 
@@ -83,7 +102,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         val requestParams = HashMap<String, String>()
         additionalHeaders.put(OAUTH_VERIFIER_HEADER, oauthVerifier)
 
-        performAuthRequest(context, AUTH_ACCESS_TOKEN_URL, additionalHeaders, requestParams,
+        performSignedRequest(AUTH_ACCESS_TOKEN_URL, additionalHeaders, requestParams,
                 Response.Listener<String> { response ->
 
                     val authVerifier = getResponseParamValue(response, OAUTH_TOKEN_SECRET_PARAM)
@@ -104,50 +123,17 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                 })
     }
 
-    private fun performAuthRequest(context: Context, url: String, additionalHeaders: Map<String, String>?,
-                           requestParams: Map<String, String>?,
-                           listener: Response.Listener<String>, errorListener: Response.ErrorListener) {
+    fun performSignedRequest(url: String, additionalHeaders: Map<String, String>?,
+                             requestParams: Map<String, String>?,
+                             listener: Response.Listener<String>, errorListener: Response.ErrorListener) {
 
         val request = object : StringRequest(Request.Method.POST, url, listener, errorListener) {
 
             override fun getHeaders(): MutableMap<String, String> {
 
-                val oauthHeaders = TreeMap<String, String>()
-
-                oauthHeaders.put(OAUTH_CONSUMER_KEY_HEADER, BuildConfig.CONSUMER_KEY)
-                oauthHeaders.put(OAUTH_SIGNATURE_METHOD_HEADER, OAUTH_SIGNATURE_METHOD_HMAC_SHA1)
-                oauthHeaders.put(OAUTH_TIMESTAMP_HEADER, URLEncoder.encode((Date().time / 1000).toString()))
-
-                val nonce = String(Base64.encode(Math.random().toString().toByteArray(), Base64.DEFAULT))
-                oauthHeaders.put(OAUTH_NONCE_HEADER, nonce.trim { it <= ' ' })
-
-                oauthHeaders.put(OAUTH_VERSION_HEADER, OAUTH_VERSION_VALUE)
-
-                if (additionalHeaders != null) {
-                    oauthHeaders.putAll(additionalHeaders);
-                }
-
-                var signature = ""
-                try {
-                    signature = getSignature("POST", url, oauthHeaders, params)
-
-                } catch (e: NoSuchAlgorithmException) {
-                    throw OAuthException("Cannot create oauth signature", e)
-                } catch (e: InvalidKeyException) {
-                    throw OAuthException("Cannot create oauth signature", e)
-                }
-
-                oauthHeaders.put(OAUTH_SIGNATURE_HEADER, signature.trim { it <= ' ' })
-
-                val encodedHeaders = HashMap<String, String>()
-                for (header in oauthHeaders.keys) {
-                    val paramValue = oauthHeaders[header]
-                    encodedHeaders.put(header, URLEncoder.encode(paramValue))
-                }
-
+                val authHeader = getOAuthHeader(url, additionalHeaders, requestParams)
                 val headers = HashMap<String, String>()
-                headers.put("Authorization", "OAuth " + glueParams(encodedHeaders))
-
+                headers.put("Authorization", authHeader)
                 return headers
             }
 
@@ -155,20 +141,63 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                 if (requestParams != null) {
                     return requestParams
                 } else {
-                    return HashMap<String,String>()
+                    return HashMap<String, String>()
                 }
             }
         }
 
-        val requestQueue = Volley.newRequestQueue(context)
+        val requestQueue = Volley.newRequestQueue(mContext)
         requestQueue.add(request)
     }
 
+    private fun getOAuthHeader(url: String, additionalHeaders: Map<String, String>?,
+                               requestParams: Map<String, String>?): String {
+
+        val oauthHeaders = TreeMap<String, String>()
+
+        oauthHeaders.put(OAUTH_CONSUMER_KEY_HEADER, BuildConfig.CONSUMER_KEY)
+        oauthHeaders.put(OAUTH_SIGNATURE_METHOD_HEADER, OAUTH_SIGNATURE_METHOD_HMAC_SHA1)
+        oauthHeaders.put(OAUTH_TIMESTAMP_HEADER, URLEncoder.encode((Date().time / 1000).toString()))
+
+        val nonce = String(Base64.encode(Math.random().toString().toByteArray(), Base64.DEFAULT))
+        oauthHeaders.put(OAUTH_NONCE_HEADER, nonce.trim { it <= ' ' })
+
+        oauthHeaders.put(OAUTH_VERSION_HEADER, OAUTH_VERSION_VALUE)
+
+        if (additionalHeaders != null) {
+            oauthHeaders.putAll(additionalHeaders);
+        }
+
+        var signature = ""
+        try {
+            signature = getSignature("POST", url, oauthHeaders, requestParams)
+
+        } catch (e: NoSuchAlgorithmException) {
+            throw OAuthException("Cannot create oauth signature", e)
+        } catch (e: InvalidKeyException) {
+            throw OAuthException("Cannot create oauth signature", e)
+        }
+
+        oauthHeaders.put(OAUTH_SIGNATURE_HEADER, signature.trim { it <= ' ' })
+
+        val encodedHeaders = HashMap<String, String>()
+        for (header in oauthHeaders.keys) {
+            val paramValue = oauthHeaders[header]
+            encodedHeaders.put(header, URLEncoder.encode(paramValue))
+        }
+
+        return "OAuth " + glueParams(encodedHeaders)
+    }
+
     @Throws(NoSuchAlgorithmException::class, InvalidKeyException::class)
-    private fun getSignature(method: String, baseURL: String, headers: Map<String, String>, params: Map<String, String>): String {
+    private fun getSignature(method: String, baseURL: String,
+                             headers: Map<String, String>,
+                             params: Map<String, String>?): String {
 
         val allParams = TreeMap(headers)
-        allParams.putAll(params)
+        if (params != null) {
+            allParams.putAll(params)
+        }
 
         val signatureBaseString = StringBuilder()
 

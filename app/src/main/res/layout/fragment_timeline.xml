@@ -8,6 +8,11 @@
         android:layout_height="match_parent"
         tools:context="com.nzarudna.tweetstestapp.TimelineActivity">
 
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/tweetsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
         <WebView
             android:id="@+id/loginWebView"
             android:layout_width="match_parent"

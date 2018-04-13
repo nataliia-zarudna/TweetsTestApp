@@ -4,14 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
 import android.util.Log
-import com.android.volley.Request
-import com.android.volley.Response
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
 import retrofit2.Call
 import retrofit2.Callback
 import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import java.security.InvalidKeyException
 import java.security.NoSuchAlgorithmException
 import java.util.*
@@ -31,38 +26,53 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
 
     private val TAG = "TwitterAuthManager"
 
-    private val AUTH_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token"
-    private val AUTH_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token"
-    private val AUTHENTICATE_URL = "https://api.twitter.com/oauth/authenticate"
+    companion object {
+        private const val AUTH_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token"
+        private const val AUTH_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token"
+        private const val AUTHENTICATE_URL = "https://api.twitter.com/oauth/authenticate"
 
-    private val OAUTH_CALLBACK_HEADER = "oauth_callback"
-    private val OAUTH_TOKEN_HEADER = "oauth_token"
-    private val OAUTH_VERIFIER_HEADER = "oauth_verifier"
-    private val OAUTH_CONSUMER_KEY_HEADER = "oauth_consumer_key"
-    private val OAUTH_SIGNATURE_HEADER = "oauth_signature"
-    private val OAUTH_SIGNATURE_METHOD_HEADER = "oauth_signature_method"
-    private val OAUTH_SIGNATURE_METHOD_HMAC_SHA1 = "HMAC-SHA1"
-    private val OAUTH_TIMESTAMP_HEADER = "oauth_timestamp"
-    private val OAUTH_NONCE_HEADER = "oauth_nonce"
-    private val OAUTH_VERSION_HEADER = "oauth_version"
-    private val OAUTH_VERSION_VALUE = "1.0"
+        const val POST = "POST"
+        const val GET = "GET"
 
-    private val OAUTH_TOKEN_PARAM = "oauth_token"
-    private val OAUTH_TOKEN_SECRET_PARAM = "oauth_token_secret"
-    private val USER_ID_PARAM = "user_id"
-    private val SCREEN_NAME_PARAM = "screen_name"
+        private const val OAUTH_CALLBACK_HEADER = "oauth_callback"
+        private const val OAUTH_TOKEN_HEADER = "oauth_token"
+        private const val OAUTH_VERIFIER_HEADER = "oauth_verifier"
+        private const val OAUTH_CONSUMER_KEY_HEADER = "oauth_consumer_key"
+        private const val OAUTH_SIGNATURE_HEADER = "oauth_signature"
+        private const val OAUTH_SIGNATURE_METHOD_HEADER = "oauth_signature_method"
+        private const val OAUTH_SIGNATURE_METHOD_HMAC_SHA1 = "HMAC-SHA1"
+        private const val OAUTH_TIMESTAMP_HEADER = "oauth_timestamp"
+        private const val OAUTH_NONCE_HEADER = "oauth_nonce"
+        private const val OAUTH_VERSION_HEADER = "oauth_version"
+        private const val OAUTH_VERSION_VALUE = "1.0"
+
+        private const val OAUTH_TOKEN = "oauth_token"
+        private const val OAUTH_TOKEN_SECRET = "oauth_token_secret"
+        const val USER_ID: String = "user_id"
+        private const val SCREEN_NAME = "screen_name"
+    }
 
     fun isAuthorized(): Boolean {
-        return !mSharedPreferences.getString(OAUTH_TOKEN_PARAM, "").isEmpty()
-                && !mSharedPreferences.getString(OAUTH_TOKEN_SECRET_PARAM, "").isEmpty()
-                && !mSharedPreferences.getString(USER_ID_PARAM, "").isEmpty()
+        return mSharedPreferences.contains(OAUTH_TOKEN)
+                && mSharedPreferences.contains(OAUTH_TOKEN_SECRET)
+                && mSharedPreferences.contains(USER_ID)
+    }
+
+    fun getUserID(): String? {
+        if (isAuthorized()) {
+            return mSharedPreferences.getString(USER_ID, "")
+        } else {
+            return null
+        }
     }
 
     fun getRequestToken(obtainAuthTokenListener: ObtainAuthTokenListener) {
 
         val additionalHeaders = HashMap<String, String>()
         additionalHeaders.put(OAUTH_CALLBACK_HEADER, BuildConfig.CALLBACK_URL)
-        val oauthHeaders: String = getOAuthHeader(AUTH_REQUEST_TOKEN_URL, additionalHeaders, null)
+        val oauthHeaders: String = getOAuthHeader(POST, AUTH_REQUEST_TOKEN_URL, additionalHeaders, null)
+
+        Log.d(TAG, "Oaut header: " + oauthHeaders)
 
         mTwitterApi
                 .getRequestToken(oauthHeaders)
@@ -83,18 +93,6 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                     }
 
                 })
-
-        /*performSignedRequest(AUTH_REQUEST_TOKEN_URL, additionalHeaders, null,
-                Response.Listener<String> { response ->
-
-                    val oauthToken = getResponseParamValue(response, OAUTH_TOKEN_HEADER)
-                    obtainAuthTokenListener.onObtainToken(oauthToken)
-                },
-                Response.ErrorListener { error ->
-                    Log.e(TAG, "onErrorResponse " + String(error.networkResponse.data, StandardCharsets.UTF_8), error)
-
-                    obtainAuthTokenListener.onError(error)
-                })*/
     }
 
     fun getAuthToken(callbackResultURL: String, obtainAuthTokenListener: ObtainAuthTokenListener) {
@@ -110,10 +108,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
 
         val additionalHeaders = HashMap<String, String>()
         additionalHeaders.put(OAUTH_TOKEN_HEADER, oauthToken)
-        val oauthHeaders: String = getOAuthHeader(AUTH_REQUEST_TOKEN_URL, additionalHeaders, null)
-
-        //val requestParams = HashMap<String, String>()
-        //additionalHeaders.put(OAUTH_VERIFIER_HEADER, oauthVerifier)
+        val oauthHeaders: String = getOAuthHeader(POST, AUTH_REQUEST_TOKEN_URL, additionalHeaders, null)
 
         mTwitterApi
                 .getAuthToken(oauthHeaders, oauthVerifier)
@@ -123,16 +118,18 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                         if (response?.isSuccessful == true && response.body() != null) {
 
                             val responseBody: String = response.body()!!
-                            val authVerifier = getResponseParamValue(responseBody, OAUTH_TOKEN_SECRET_PARAM)
-                            obtainAuthTokenListener.onObtainToken(authVerifier)
+                            val userToken = getResponseParamValue(responseBody, OAUTH_TOKEN)
+                            val userTokenSecret = getResponseParamValue(responseBody, OAUTH_TOKEN_SECRET)
 
                             mSharedPreferences
                                     .edit()
-                                    .putString(OAUTH_TOKEN_PARAM, oauthToken)
-                                    .putString(OAUTH_TOKEN_SECRET_PARAM, oauthVerifier)
-                                    .putString(USER_ID_PARAM, getResponseParamValue(responseBody, USER_ID_PARAM))
-                                    .putString(SCREEN_NAME_PARAM, getResponseParamValue(responseBody, SCREEN_NAME_PARAM))
+                                    .putString(OAUTH_TOKEN, userToken)
+                                    .putString(OAUTH_TOKEN_SECRET, userTokenSecret)
+                                    .putString(USER_ID, getResponseParamValue(responseBody, USER_ID))
+                                    .putString(SCREEN_NAME, getResponseParamValue(responseBody, SCREEN_NAME))
                                     .apply()
+
+                            obtainAuthTokenListener.onObtainToken(oauthVerifier)
                         } else {
                             Log.e(TAG, response?.errorBody()?.string())
                             obtainAuthTokenListener.onError(OAuthException("Empty request token"))
@@ -143,57 +140,10 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                         obtainAuthTokenListener.onError(OAuthException("Cannot obtain oauth token", t))
                     }
                 })
-
-        /*performSignedRequest(AUTH_ACCESS_TOKEN_URL, additionalHeaders, requestParams,
-                Response.Listener<String> { response ->
-
-                    val authVerifier = getResponseParamValue(response, OAUTH_TOKEN_SECRET_PARAM)
-                    obtainAuthTokenListener.onObtainToken(authVerifier)
-
-                    mSharedPreferences
-                            .edit()
-                            .putString(OAUTH_TOKEN_PARAM, oauthToken)
-                            .putString(OAUTH_TOKEN_SECRET_PARAM, oauthVerifier)
-                            .putString(USER_ID_PARAM, getResponseParamValue(response, USER_ID_PARAM))
-                            .putString(SCREEN_NAME_PARAM, getResponseParamValue(response, SCREEN_NAME_PARAM))
-                            .apply()
-                },
-                Response.ErrorListener { error ->
-                    Log.e(TAG, "onErrorResponse " + String(error.networkResponse.data, StandardCharsets.UTF_8), error)
-
-                    obtainAuthTokenListener.onError(error)
-                })*/
     }
 
-    fun performSignedRequest(url: String, additionalHeaders: Map<String, String>?,
-                             requestParams: Map<String, String>?,
-                             listener: Response.Listener<String>, errorListener: Response.ErrorListener) {
-
-        val request = object : StringRequest(Request.Method.POST, url, listener, errorListener) {
-
-            override fun getHeaders(): MutableMap<String, String> {
-
-                val authHeader = getOAuthHeader(url, additionalHeaders, requestParams)
-                val headers = HashMap<String, String>()
-                headers.put("Authorization", authHeader)
-                return headers
-            }
-
-            override fun getParams(): Map<String, String> {
-                if (requestParams != null) {
-                    return requestParams
-                } else {
-                    return HashMap<String, String>()
-                }
-            }
-        }
-
-        val requestQueue = Volley.newRequestQueue(mContext)
-        requestQueue.add(request)
-    }
-
-    private fun getOAuthHeader(url: String, additionalHeaders: Map<String, String>?,
-                               requestParams: Map<String, String>?): String {
+    fun getOAuthHeader(method: String, url: String, additionalHeaders: Map<String, String>?,
+                       requestParams: Map<String, String>?): String {
 
         val oauthHeaders = TreeMap<String, String>()
 
@@ -206,13 +156,18 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
 
         oauthHeaders.put(OAUTH_VERSION_HEADER, OAUTH_VERSION_VALUE)
 
+        if (mSharedPreferences.contains(OAUTH_TOKEN)) {
+            val oauthToken: String = mSharedPreferences.getString(OAUTH_TOKEN, "")
+            oauthHeaders.put(OAUTH_TOKEN_HEADER, oauthToken)
+        }
+
         if (additionalHeaders != null) {
             oauthHeaders.putAll(additionalHeaders);
         }
 
         var signature = ""
         try {
-            signature = getSignature("POST", url, oauthHeaders, requestParams)
+            signature = getSignature(method, url, oauthHeaders, requestParams)
 
         } catch (e: NoSuchAlgorithmException) {
             throw OAuthException("Cannot create oauth signature", e)
@@ -266,7 +221,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
 
         val mac = Mac.getInstance(OAUTH_SIGNATURE_METHOD_HMAC_SHA1)
 
-        val oauthSecret: String = mSharedPreferences.getString(OAUTH_TOKEN_SECRET_PARAM, "")
+        val oauthSecret: String = mSharedPreferences.getString(OAUTH_TOKEN_SECRET, "")
         val signingKey = BuildConfig.CONSUMER_SECRET_KEY + "&" + oauthSecret
 
         val secretKeySpec = SecretKeySpec(signingKey.toByteArray(), mac.algorithm)

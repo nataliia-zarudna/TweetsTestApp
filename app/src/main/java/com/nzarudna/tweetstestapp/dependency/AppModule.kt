@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.nzarudna.tweetstestapp.R
 import com.nzarudna.tweetstestapp.TwitterApi
 import com.nzarudna.tweetstestapp.TwitterAuthManager
+import com.nzarudna.tweetstestapp.model.tweet.TweetRepository
 import dagger.Module
 import dagger.Provides
 
@@ -17,6 +18,11 @@ class AppModule(var mContext: Context) {
     @Provides
     fun provideTwitterAuthManager() : TwitterAuthManager {
         return TwitterAuthManager(provideSharedPreferences(), mContext, provideTwitterApi())
+    }
+
+    @Provides
+    fun provideTweetRepository() : TweetRepository {
+        return TweetRepository(provideTwitterAuthManager(), provideTwitterApi())
     }
 
     @Provides

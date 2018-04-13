@@ -1,7 +1,8 @@
 package com.nzarudna.tweetstestapp
 
 import android.arch.lifecycle.ViewModel
-import android.content.Context
+import android.arch.paging.PagedList
+import com.nzarudna.tweetstestapp.model.tweet.Tweet
 import com.nzarudna.tweetstestapp.model.tweet.TweetRepository
 import javax.inject.Inject
 
@@ -17,9 +18,11 @@ class TimelineViewModel : ViewModel() {
         return mTwitterAuthManager.isAuthorized()
     }
 
-    fun loadTimeline() {
+    fun loadTimeline(): PagedList<Tweet> {
 
-
+        val userID = mTwitterAuthManager.getUserID()!!
+        //val userID = "44196397"
+        return mTwitterRepository.getPublicTweets(userID, 20)
 
     }
 
@@ -48,7 +51,7 @@ class TimelineViewModel : ViewModel() {
             mTwitterAuthManager.getAuthToken(url, object: TwitterAuthManager.ObtainAuthTokenListener {
 
                 override fun onObtainToken(authToken: String?) {
-                    val d = 1
+                    observer?.onAuthorized()
                 }
 
                 override fun onError(e: Throwable) {
@@ -61,6 +64,7 @@ class TimelineViewModel : ViewModel() {
 
     interface TimelineViewModelObserver {
         fun loadURL(url: String)
+        fun onAuthorized()
         fun onError(e: Throwable)
     }
 }

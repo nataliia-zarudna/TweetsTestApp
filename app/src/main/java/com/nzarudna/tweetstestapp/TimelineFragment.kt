@@ -27,6 +27,10 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         mViewModel = TimelineViewModel()
         (activity?.application as TweetsTestApplication).appComponent.inject(mViewModel)
 
+        //mViewModel.mTwitterAuthManager.mSharedPreferences.edit().remove("user_id").commit()
+        //mViewModel.mTwitterAuthManager.mSharedPreferences.edit().remove("oauth_token").commit()
+        //mViewModel.mTwitterAuthManager.mSharedPreferences.edit().remove("oauth_token_secret").commit()
+
         if (mViewModel.isAuthorized()) {
             mViewModel.loadTimeline()
         } else {
@@ -53,7 +57,12 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         loginWebView.loadUrl(url)
     }
 
+    override fun onAuthorized() {
+        mViewModel.loadTimeline()
+    }
+
     override fun onError(e: Throwable) {
         Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
     }
+
 }

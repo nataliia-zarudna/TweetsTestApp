@@ -23,7 +23,6 @@ class TimelineViewModel : ViewModel() {
         val userID = mTwitterAuthManager.getUserID()!!
         //val userID = "44196397"
         return mTwitterRepository.getPublicTweets(userID, 20)
-
     }
 
     fun authorize(observer: TimelineViewModelObserver?) {

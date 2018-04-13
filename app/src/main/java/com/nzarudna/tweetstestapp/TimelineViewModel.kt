@@ -2,6 +2,7 @@ package com.nzarudna.tweetstestapp
 
 import android.arch.lifecycle.ViewModel
 import android.content.Context
+import com.nzarudna.tweetstestapp.model.tweet.TweetRepository
 import javax.inject.Inject
 
 /**
@@ -10,8 +11,19 @@ import javax.inject.Inject
 class TimelineViewModel : ViewModel() {
 
     @Inject lateinit var mTwitterAuthManager : TwitterAuthManager
+    @Inject lateinit var mTwitterRepository: TweetRepository
 
-    fun authorize(context: Context, observer: TimelineViewModelObserver?) {
+    fun isAuthorized(): Boolean {
+        return mTwitterAuthManager.isAuthorized()
+    }
+
+    fun loadTimeline() {
+
+
+
+    }
+
+    fun authorize(observer: TimelineViewModelObserver?) {
         mTwitterAuthManager.getRequestToken(object: TwitterAuthManager.ObtainAuthTokenListener {
 
             override fun onObtainToken(authToken: String?) {
@@ -30,7 +42,7 @@ class TimelineViewModel : ViewModel() {
         })
     }
 
-    fun onWebPageFinished(context: Context, url: String, observer: TimelineViewModelObserver?) {
+    fun onWebPageFinished(url: String, observer: TimelineViewModelObserver?) {
 
         if (url.startsWith(BuildConfig.CALLBACK_URL)) {
             mTwitterAuthManager.getAuthToken(url, object: TwitterAuthManager.ObtainAuthTokenListener {

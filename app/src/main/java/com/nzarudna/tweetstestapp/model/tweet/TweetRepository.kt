@@ -25,7 +25,7 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
 
         override fun loadInitial(params: LoadInitialParams, callback: LoadInitialCallback<Tweet>) {
 
-            mTwitterAuthManager.performSignedRequest()
+            //mTwitterAuthManager.performSignedRequest()
 
         }
 

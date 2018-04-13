@@ -52,25 +52,37 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
     private val USER_ID_PARAM = "user_id"
     private val SCREEN_NAME_PARAM = "screen_name"
 
+    fun isAuthorized(): Boolean {
+        return !mSharedPreferences.getString(OAUTH_TOKEN_PARAM, "").isEmpty()
+                && !mSharedPreferences.getString(OAUTH_TOKEN_SECRET_PARAM, "").isEmpty()
+                && !mSharedPreferences.getString(USER_ID_PARAM, "").isEmpty()
+    }
+
     fun getRequestToken(obtainAuthTokenListener: ObtainAuthTokenListener) {
 
         val additionalHeaders = HashMap<String, String>()
         additionalHeaders.put(OAUTH_CALLBACK_HEADER, BuildConfig.CALLBACK_URL)
-
         val oauthHeaders: String = getOAuthHeader(AUTH_REQUEST_TOKEN_URL, additionalHeaders, null)
-        val requestToken: Call<String> = mTwitterApi.getRequestToken(oauthHeaders)
-        requestToken.enqueue(object : Callback<String> {
 
-            override fun onResponse(call: Call<String>?, response: retrofit2.Response<String>?) {
-                val oauthToken = getResponseParamValue("", OAUTH_TOKEN_HEADER)
-                obtainAuthTokenListener.onObtainToken(oauthToken)
-            }
+        mTwitterApi
+                .getRequestToken(oauthHeaders)
+                .enqueue(object : Callback<String> {
 
-            override fun onFailure(call: Call<String>?, t: Throwable?) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-            }
+                    override fun onResponse(call: Call<String>?, response: retrofit2.Response<String>?) {
+                        if (response?.isSuccessful == true && response.body() != null) {
+                            val oauthToken = getResponseParamValue(response.body()!!, OAUTH_TOKEN_HEADER)
+                            obtainAuthTokenListener.onObtainToken(oauthToken)
+                        } else {
+                            Log.e(TAG, response?.errorBody()?.string())
+                            obtainAuthTokenListener.onError(OAuthException("Empty request token"))
+                        }
+                    }
 
-        })
+                    override fun onFailure(call: Call<String>?, t: Throwable?) {
+                        obtainAuthTokenListener.onError(OAuthException("Cannot obtain request token", t))
+                    }
+
+                })
 
         /*performSignedRequest(AUTH_REQUEST_TOKEN_URL, additionalHeaders, null,
                 Response.Listener<String> { response ->
@@ -98,11 +110,41 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
 
         val additionalHeaders = HashMap<String, String>()
         additionalHeaders.put(OAUTH_TOKEN_HEADER, oauthToken)
+        val oauthHeaders: String = getOAuthHeader(AUTH_REQUEST_TOKEN_URL, additionalHeaders, null)
 
-        val requestParams = HashMap<String, String>()
-        additionalHeaders.put(OAUTH_VERIFIER_HEADER, oauthVerifier)
+        //val requestParams = HashMap<String, String>()
+        //additionalHeaders.put(OAUTH_VERIFIER_HEADER, oauthVerifier)
 
-        performSignedRequest(AUTH_ACCESS_TOKEN_URL, additionalHeaders, requestParams,
+        mTwitterApi
+                .getAuthToken(oauthHeaders, oauthVerifier)
+                .enqueue(object : Callback<String> {
+
+                    override fun onResponse(call: Call<String>?, response: retrofit2.Response<String>?) {
+                        if (response?.isSuccessful == true && response.body() != null) {
+
+                            val responseBody: String = response.body()!!
+                            val authVerifier = getResponseParamValue(responseBody, OAUTH_TOKEN_SECRET_PARAM)
+                            obtainAuthTokenListener.onObtainToken(authVerifier)
+
+                            mSharedPreferences
+                                    .edit()
+                                    .putString(OAUTH_TOKEN_PARAM, oauthToken)
+                                    .putString(OAUTH_TOKEN_SECRET_PARAM, oauthVerifier)
+                                    .putString(USER_ID_PARAM, getResponseParamValue(responseBody, USER_ID_PARAM))
+                                    .putString(SCREEN_NAME_PARAM, getResponseParamValue(responseBody, SCREEN_NAME_PARAM))
+                                    .apply()
+                        } else {
+                            Log.e(TAG, response?.errorBody()?.string())
+                            obtainAuthTokenListener.onError(OAuthException("Empty request token"))
+                        }
+                    }
+
+                    override fun onFailure(call: Call<String>?, t: Throwable?) {
+                        obtainAuthTokenListener.onError(OAuthException("Cannot obtain oauth token", t))
+                    }
+                })
+
+        /*performSignedRequest(AUTH_ACCESS_TOKEN_URL, additionalHeaders, requestParams,
                 Response.Listener<String> { response ->
 
                     val authVerifier = getResponseParamValue(response, OAUTH_TOKEN_SECRET_PARAM)
@@ -120,7 +162,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                     Log.e(TAG, "onErrorResponse " + String(error.networkResponse.data, StandardCharsets.UTF_8), error)
 
                     obtainAuthTokenListener.onError(error)
-                })
+                })*/
     }
 
     fun performSignedRequest(url: String, additionalHeaders: Map<String, String>?,
@@ -160,7 +202,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         oauthHeaders.put(OAUTH_TIMESTAMP_HEADER, URLEncoder.encode((Date().time / 1000).toString()))
 
         val nonce = String(Base64.encode(Math.random().toString().toByteArray(), Base64.DEFAULT))
-        oauthHeaders.put(OAUTH_NONCE_HEADER, nonce.trim { it <= ' ' })
+        oauthHeaders.put(OAUTH_NONCE_HEADER, nonce.trim())
 
         oauthHeaders.put(OAUTH_VERSION_HEADER, OAUTH_VERSION_VALUE)
 
@@ -178,7 +220,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
             throw OAuthException("Cannot create oauth signature", e)
         }
 
-        oauthHeaders.put(OAUTH_SIGNATURE_HEADER, signature.trim { it <= ' ' })
+        oauthHeaders.put(OAUTH_SIGNATURE_HEADER, signature.trim())
 
         val encodedHeaders = HashMap<String, String>()
         for (header in oauthHeaders.keys) {

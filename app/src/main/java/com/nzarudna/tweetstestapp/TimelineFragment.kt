@@ -12,8 +12,6 @@ import android.widget.Toast
 import com.nzarudna.tweetstestapp.databinding.FragmentTimelineBinding
 import kotlinx.android.synthetic.main.fragment_timeline.*
 
-//import kotlinx.android.synthetic.main.fragment_timeline.*
-
 /**
  * Created by Nataliia on 11.04.2018.
  */
@@ -27,9 +25,13 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
                 = DataBindingUtil.inflate(inflater, R.layout.fragment_timeline, container, false)
 
         mViewModel = TimelineViewModel()
-        (activity.application as TweetsTestApplication).appComponent.inject(mViewModel)
+        (activity?.application as TweetsTestApplication).appComponent.inject(mViewModel)
 
-        mViewModel.authorize(activity, this)
+        if (mViewModel.isAuthorized()) {
+            mViewModel.loadTimeline()
+        } else {
+            mViewModel.authorize(this)
+        }
 
         return fragmentView.root
     }
@@ -40,7 +42,9 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
 
             override fun onPageFinished(view: WebView, url: String) {
 
-                mViewModel.onWebPageFinished(activity, url, this@TimelineFragment)
+                if (activity != null) {
+                    mViewModel.onWebPageFinished(url, this@TimelineFragment)
+                }
 
                 super.onPageFinished(view, url)
             }

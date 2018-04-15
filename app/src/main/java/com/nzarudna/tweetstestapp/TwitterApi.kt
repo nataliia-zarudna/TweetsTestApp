@@ -19,14 +19,29 @@ public interface TwitterApi {
 
     @FormUrlEncoded
     @POST("oauth/access_token")
-    fun getAuthToken(@Header("Authorization") authorizationHeader: String, @Field("oauth_verifier") oauthVerifier: String): Call<String>
+    fun getAuthToken(@Header("Authorization") authorizationHeader: String,
+                     @Field("oauth_verifier") oauthVerifier: String): Call<String>
 
     @GET("1.1/statuses/user_timeline.json")
-    fun getTimeline(@Header("Authorization") authorizationHeader: String, @Query("user_id") userID: String, @Query("count") count: Int): Call<List<Tweet>>
+    fun getTimeline(@Header("Authorization") authorizationHeader: String,
+                    @Query("user_id") userID: String,
+                    @Query("count") count: Int): Call<List<Tweet>>
+
+    @GET("1.1/statuses/user_timeline.json")
+    fun getTimelineBefore(@Header("Authorization") authorizationHeader: String,
+                          @Query("user_id") userID: String,
+                          @Query("count") count: Int,
+                          @Query("since_id") sinceID: String): Call<List<Tweet>>
+
+    @GET("1.1/statuses/user_timeline.json")
+    fun getTimelineAfter(@Header("Authorization") authorizationHeader: String,
+                         @Query("user_id") userID: String,
+                         @Query("count") count: Int,
+                         @Query("max_id") maxID: String): Call<List<Tweet>>
 
     companion object Factory {
         fun create(): TwitterApi {
-//Thu Apr 06 15:28:43 +0000 2017
+
             val gson: Gson = GsonBuilder()
                     .setDateFormat("EEE MMM dd HH:mm:ss Z yyyy")
                     .create()

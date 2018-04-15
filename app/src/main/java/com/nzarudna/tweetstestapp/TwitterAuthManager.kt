@@ -46,8 +46,8 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         private const val OAUTH_VERSION_HEADER = "oauth_version"
         private const val OAUTH_VERSION_VALUE = "1.0"
 
-        private const val OAUTH_TOKEN = "oauth_token"
-        private const val OAUTH_TOKEN_SECRET = "oauth_token_secret"
+        const val OAUTH_TOKEN = "oauth_token"
+        const val OAUTH_TOKEN_SECRET = "oauth_token_secret"
         const val USER_ID: String = "user_id"
         private const val SCREEN_NAME = "screen_name"
     }
@@ -170,9 +170,16 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
             oauthHeaders.putAll(additionalHeaders);
         }
 
+        val cloneRequestParams = HashMap<String, String>()
+        if (requestParams != null) {
+            requestParams.forEach({ (key, value) ->
+                cloneRequestParams.put(key, URLEncoder.encode(value))
+            })
+        }
+
         var signature = ""
         try {
-            signature = getSignature(method, url, oauthHeaders, requestParams)
+            signature = getSignature(method, url, oauthHeaders, cloneRequestParams)
 
         } catch (e: NoSuchAlgorithmException) {
             throw OAuthException("Cannot create oauth signature", e)

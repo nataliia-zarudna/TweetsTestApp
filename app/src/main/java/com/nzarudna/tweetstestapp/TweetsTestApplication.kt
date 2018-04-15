@@ -10,7 +10,7 @@ import com.nzarudna.tweetstestapp.dependency.DaggerAppComponent
  */
 class TweetsTestApplication : Application() {
 
-    val appComponent: AppComponent by lazy {
+    val mAppComponent: AppComponent by lazy {
         DaggerAppComponent
                 .builder()
                 .appModule(AppModule(this))

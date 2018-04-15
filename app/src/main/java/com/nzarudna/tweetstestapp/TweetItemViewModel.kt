@@ -14,14 +14,21 @@ class TweetItemViewModel : BaseObservable() {
     val mRegistry: PropertyChangeRegistry = PropertyChangeRegistry()
 
     @Bindable
-    lateinit var tweet: Tweet
-    /*set(value) {
-        mRegistry.notifyChange(this, BR._all)
-    }*/
+    var mTweet: Tweet? = null
+        set(value) {
+            field = value
+            mRegistry.notifyChange(this, BR.viewModel)
+        }
 
-    var text: String = ""
-        get() = tweet.text
+    var text: String? = null
+        get() = mTweet?.text ?: ""
 
-    var createdAt: String = ""
-        get() = SimpleDateFormat.getDateTimeInstance().format(tweet.createdAt)
+    var createdAt: String? = null
+        get() {
+            if (mTweet?.createdAt != null) {
+                return SimpleDateFormat.getDateTimeInstance().format(mTweet!!.createdAt)
+            } else {
+                return null
+            }
+        }
 }

@@ -33,7 +33,20 @@
             android:id="@+id/loginWebView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="@{!viewModel.authorized ? View.VISIBLE : View.GONE}" />
+            android:background="@android:color/holo_blue_dark"
+            android:visibility="@{(!viewModel.authorized &amp;&amp; viewModel.authenticating) ? View.VISIBLE : View.GONE}" />
+
+        <Button
+            android:id="@+id/loginButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="@{() -> viewModel.authorize()}"
+            android:text="@string/login_to_twitter"
+            android:visibility="@{(!viewModel.authorized &amp;&amp; !viewModel.authenticating) ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
     </android.support.constraint.ConstraintLayout>
 </layout>

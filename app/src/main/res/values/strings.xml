@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">TweetsTestApp</string>
     <string name="tweets_preferences_file">tweets_preferences_file</string>
+    <string name="login_to_twitter">Login to Twitter</string>
 </resources>

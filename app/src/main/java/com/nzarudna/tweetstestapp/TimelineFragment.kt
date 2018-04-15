@@ -13,7 +13,6 @@ import android.support.v4.app.Fragment
 import android.support.v7.util.DiffUtil
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -41,14 +40,11 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         val fragmentView = fragmentViewBinding.root
 
         mViewModel = ViewModelProviders.of(this).get(TimelineViewModel::class.java)
-        (activity?.application as TweetsTestApplication).appComponent.inject(mViewModel)
+        (activity?.application as TweetsTestApplication).mAppComponent.inject(mViewModel)
+        mViewModel.mObserver = this
         fragmentViewBinding.setVariable(BR.viewModel, mViewModel)
 
-        //mViewModel.mTwitterAuthManager.mSharedPreferences.edit().remove("user_id").commit()
-        //mViewModel.mTwitterAuthManager.mSharedPreferences.edit().remove("oauth_token").commit()
-        //mViewModel.mTwitterAuthManager.mSharedPreferences.edit().remove("oauth_token_secret").commit()
-
-        mTweetAdapter = TweetAdapter(activity!!, object: DiffUtil.ItemCallback<Tweet>() {
+        mTweetAdapter = TweetAdapter(activity!!, object : DiffUtil.ItemCallback<Tweet>() {
 
             override fun areContentsTheSame(oldItem: Tweet?, newItem: Tweet?): Boolean {
                 return oldItem?.text?.equals(newItem?.text) == true
@@ -59,20 +55,18 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
             }
         })
 
-        fragmentView.tweetsSwipeRefreshLayout.setOnRefreshListener{
+        fragmentView.tweetsSwipeRefreshLayout.setOnRefreshListener {
 
-            Log.d("tweetsSwipeRefreshLayo", "refresh")
             fragmentView.tweetsSwipeRefreshLayout.isRefreshing = true
             loadTimeline()
-
         }
         fragmentView.tweetsRecyclerView.layoutManager = LinearLayoutManager(activity)
         fragmentView.tweetsRecyclerView.adapter = mTweetAdapter
 
-        if (mViewModel.isAuthorized()) {
+        if (mViewModel.isAuthorized) {
             loadTimeline()
         } else {
-            mViewModel.authorize(this)
+            mViewModel.authorize()
         }
 
         return fragmentView
@@ -80,11 +74,11 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
 
     fun loadTimeline() {
         val liveDataList: LiveData<PagedList<Tweet>> = mViewModel.loadTimeline()
-        liveDataList.observe(this, object: Observer<PagedList<Tweet>> {
+        liveDataList.observe(this, object : Observer<PagedList<Tweet>> {
             override fun onChanged(pagedList: PagedList<Tweet>?) {
                 view?.tweetsSwipeRefreshLayout?.isRefreshing = false
 
-                mViewModel.listCount = if (pagedList != null) pagedList.size else 0
+                mViewModel.mListCount = pagedList?.size ?: 0
                 mTweetAdapter.submitList(pagedList)
             }
         })
@@ -113,7 +107,7 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
     }
 
-    class TweetViewHolder(val mDataBinding: ViewDataBinding): RecyclerView.ViewHolder(mDataBinding.root) {
+    class TweetViewHolder(val mDataBinding: ViewDataBinding) : RecyclerView.ViewHolder(mDataBinding.root) {
 
         var mViewModel = TweetItemViewModel()
 
@@ -122,12 +116,12 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         }
 
         fun bind(tweet: Tweet?) {
-            mViewModel.tweet = tweet!!
+            mViewModel.mTweet = tweet!!
             mDataBinding.executePendingBindings()
         }
     }
 
-    class TweetAdapter(val mContext: Context, diffCallback: DiffUtil.ItemCallback<Tweet>): PagedListAdapter<Tweet, TweetViewHolder>(diffCallback) {
+    class TweetAdapter(val mContext: Context, diffCallback: DiffUtil.ItemCallback<Tweet>) : PagedListAdapter<Tweet, TweetViewHolder>(diffCallback) {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TweetViewHolder {
 

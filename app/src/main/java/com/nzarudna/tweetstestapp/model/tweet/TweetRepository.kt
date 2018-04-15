@@ -66,23 +66,13 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
             val requestParams = HashMap<String, String>()
             requestParams.put(TwitterAuthManager.USER_ID, userID)
             requestParams.put("count", params.requestedLoadSize.toString())
-            //requestParams.put("since_id", params.requestedLoadSize.toString())
-            //requestParams.put("max_id", params.requestedLoadSize.toString())
 
             val authHeader: String = mTwitterAuthManager.getOAuthHeader(TwitterAuthManager.GET, USER_TIMELINE_URL,
                     null, requestParams)
             val response: Response<List<Tweet>> = mTwitterApi
                     .getTimeline(authHeader, userID, params.requestedLoadSize)
                     .execute()
-
-            if (response.isSuccessful && response.body() != null) {
-
-                val tweetsList: List<Tweet> = response.body()!!
-                callback.onResult(tweetsList)
-
-            } else {
-                Log.e(TAG, "Fail to load timeline")
-            }
+            processResponse(response, callback)
         }
 
         override fun getKey(item: Tweet): String {
@@ -90,12 +80,44 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
         }
 
         override fun loadAfter(params: LoadParams<String>, callback: LoadCallback<Tweet>) {
-            Log.e(TAG, "loadAfter")
+
+            val requestParams = HashMap<String, String>()
+            requestParams.put(TwitterAuthManager.USER_ID, userID)
+            requestParams.put("count", params.requestedLoadSize.toString())
+            requestParams.put("max_id", params.key)
+
+            val authHeader: String = mTwitterAuthManager.getOAuthHeader(TwitterAuthManager.GET, USER_TIMELINE_URL,
+                    null, requestParams)
+            val response: Response<List<Tweet>> = mTwitterApi
+                    .getTimelineAfter(authHeader, userID, params.requestedLoadSize, params.key)
+                    .execute()
+            processResponse(response, callback)
         }
 
         override fun loadBefore(params: LoadParams<String>, callback: LoadCallback<Tweet>) {
-            Log.e(TAG, "loadBefore")
+
+            val requestParams = HashMap<String, String>()
+            requestParams.put(TwitterAuthManager.USER_ID, userID)
+            requestParams.put("count", params.requestedLoadSize.toString())
+            requestParams.put("since_id", params.key)
+
+            val authHeader: String = mTwitterAuthManager.getOAuthHeader(TwitterAuthManager.GET, USER_TIMELINE_URL,
+                    null, requestParams)
+            val response: Response<List<Tweet>> = mTwitterApi
+                    .getTimelineBefore(authHeader, userID, params.requestedLoadSize, params.key)
+                    .execute()
+            processResponse(response, callback)
         }
 
+        private fun processResponse(response: Response<List<Tweet>>, callback: LoadCallback<Tweet>) {
+            if (response.isSuccessful && response.body() != null) {
+
+                val tweetsList: List<Tweet> = response.body()!!
+                callback.onResult(tweetsList)
+
+            } else {
+                Log.e(TAG, "Fail to load timeline: " + response.errorBody()?.string())
+            }
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.nzarudna.tweetstestapp
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.nzarudna.tweetstestapp.model.tweet.Tweet
 import retrofit2.Call
 import retrofit2.Retrofit
@@ -24,10 +26,15 @@ public interface TwitterApi {
 
     companion object Factory {
         fun create(): TwitterApi {
+//Thu Apr 06 15:28:43 +0000 2017
+            val gson: Gson = GsonBuilder()
+                    .setDateFormat("EEE MMM dd HH:mm:ss Z yyyy")
+                    .create()
+
             val retrofit: Retrofit = Retrofit.Builder()
                     .baseUrl("https://api.twitter.com/")
                     .addConverterFactory(ScalarsConverterFactory.create())
-                    .addConverterFactory(GsonConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create(gson))
                     .build()
             return retrofit.create(TwitterApi::class.java)
         }

@@ -149,9 +149,14 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
 
         oauthHeaders.put(OAUTH_CONSUMER_KEY_HEADER, BuildConfig.CONSUMER_KEY)
         oauthHeaders.put(OAUTH_SIGNATURE_METHOD_HEADER, OAUTH_SIGNATURE_METHOD_HMAC_SHA1)
-        oauthHeaders.put(OAUTH_TIMESTAMP_HEADER, URLEncoder.encode((Date().time / 1000).toString()))
 
-        val nonce = String(Base64.encode(Math.random().toString().toByteArray(), Base64.DEFAULT))
+        val timestamp = URLEncoder.encode((Date().time / 1000).toString())
+        Log.d(TAG, "timestamp " + timestamp)
+        oauthHeaders.put(OAUTH_TIMESTAMP_HEADER, timestamp)
+
+        //val nonce = String(Base64.encode(Math.random().toString().toByteArray(), Base64.DEFAULT))
+        val nonce = URLEncoder.encode((Date().time / 1000 * 2).toString())
+        Log.d(TAG, "nonce " + nonce)
         oauthHeaders.put(OAUTH_NONCE_HEADER, nonce.trim())
 
         oauthHeaders.put(OAUTH_VERSION_HEADER, OAUTH_VERSION_VALUE)

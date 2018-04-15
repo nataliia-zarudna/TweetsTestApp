@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
+<layout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
+
         <variable
             name="viewModel"
             type="com.nzarudna.tweetstestapp.TweetItemViewModel" />
@@ -9,13 +11,26 @@
 
     <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:padding="16dp">
 
         <TextView
-            android:id="@+id/tweetName"
+            android:id="@+id/tweetText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@{viewModel.text}"/>
+            android:text="@{viewModel.text}"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Test Tweet" />
+
+        <TextView
+            android:id="@+id/tweetCreatedAt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{viewModel.createdAt}"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tweetText"
+            tools:text="00:28 16.06.18" />
 
     </android.support.constraint.ConstraintLayout>
 </layout>

@@ -1,5 +1,8 @@
 package com.nzarudna.tweetstestapp
 
+import android.arch.lifecycle.LiveData
+import android.arch.lifecycle.Observer
+import android.arch.lifecycle.ViewModelProviders
 import android.arch.paging.PagedList
 import android.arch.paging.PagedListAdapter
 import android.content.Context
@@ -8,7 +11,9 @@ import android.databinding.ViewDataBinding
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.util.DiffUtil
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +24,7 @@ import com.nzarudna.tweetstestapp.databinding.FragmentTimelineBinding
 import com.nzarudna.tweetstestapp.databinding.ListItemTweetBinding
 import com.nzarudna.tweetstestapp.model.tweet.Tweet
 import kotlinx.android.synthetic.main.fragment_timeline.*
+import kotlinx.android.synthetic.main.fragment_timeline.view.*
 
 /**
  * Created by Nataliia on 11.04.2018.
@@ -30,11 +36,13 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
-        val fragmentView: FragmentTimelineBinding
+        val fragmentViewBinding: FragmentTimelineBinding
                 = DataBindingUtil.inflate(inflater, R.layout.fragment_timeline, container, false)
+        val fragmentView = fragmentViewBinding.root
 
-        mViewModel = TimelineViewModel()
+        mViewModel = ViewModelProviders.of(this).get(TimelineViewModel::class.java)
         (activity?.application as TweetsTestApplication).appComponent.inject(mViewModel)
+        fragmentViewBinding.setVariable(BR.viewModel, mViewModel)
 
         //mViewModel.mTwitterAuthManager.mSharedPreferences.edit().remove("user_id").commit()
         //mViewModel.mTwitterAuthManager.mSharedPreferences.edit().remove("oauth_token").commit()
@@ -51,7 +59,15 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
             }
         })
 
-        tweetsRecyclerView.adapter = mTweetAdapter
+        fragmentView.tweetsSwipeRefreshLayout.setOnRefreshListener{
+
+            Log.d("tweetsSwipeRefreshLayo", "refresh")
+            fragmentView.tweetsSwipeRefreshLayout.isRefreshing = true
+            loadTimeline()
+
+        }
+        fragmentView.tweetsRecyclerView.layoutManager = LinearLayoutManager(activity)
+        fragmentView.tweetsRecyclerView.adapter = mTweetAdapter
 
         if (mViewModel.isAuthorized()) {
             loadTimeline()
@@ -59,12 +75,19 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
             mViewModel.authorize(this)
         }
 
-        return fragmentView.root
+        return fragmentView
     }
 
     fun loadTimeline() {
-        val list: PagedList<Tweet> = mViewModel.loadTimeline()
-        mTweetAdapter.submitList(list)
+        val liveDataList: LiveData<PagedList<Tweet>> = mViewModel.loadTimeline()
+        liveDataList.observe(this, object: Observer<PagedList<Tweet>> {
+            override fun onChanged(pagedList: PagedList<Tweet>?) {
+                view?.tweetsSwipeRefreshLayout?.isRefreshing = false
+
+                mViewModel.listCount = if (pagedList != null) pagedList.size else 0
+                mTweetAdapter.submitList(pagedList)
+            }
+        })
     }
 
     override fun loadURL(url: String) {
@@ -100,6 +123,7 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
 
         fun bind(tweet: Tweet?) {
             mViewModel.tweet = tweet!!
+            mDataBinding.executePendingBindings()
         }
     }
 

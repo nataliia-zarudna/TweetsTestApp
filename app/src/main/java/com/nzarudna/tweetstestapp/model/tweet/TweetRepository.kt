@@ -1,16 +1,14 @@
 package com.nzarudna.tweetstestapp.model.tweet
 
+import android.arch.lifecycle.LiveData
+import android.arch.paging.DataSource
 import android.arch.paging.ItemKeyedDataSource
+import android.arch.paging.LivePagedListBuilder
 import android.arch.paging.PagedList
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import com.nzarudna.tweetstestapp.TwitterApi
 import com.nzarudna.tweetstestapp.TwitterAuthManager
-import retrofit2.Call
-import retrofit2.Callback
 import retrofit2.Response
-import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,32 +22,44 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
 
     private val TAG = "TweetRepository"
 
-    private val USER_TIMELINE_URL = "https://api.twitter.com/1.1/statuses/user_timeline.json"
+    fun getPublicTweets(userID: String, pageSize: Int): LiveData<PagedList<Tweet>> {
 
-    fun getPublicTweets(userID: String, pageSize: Int): PagedList<Tweet> {
+        val dataSourceFactory = ApiTweetsFactory(userID, mTwitterApi, mTwitterAuthManager)
+        val config: PagedList.Config = PagedList.Config.Builder()
+                .setPageSize(pageSize)
+                .setEnablePlaceholders(false)
+                .build()
 
-        val apiTweetsDataSource: ApiTweetsDataSource = ApiTweetsDataSource(userID, mTwitterApi, mTwitterAuthManager)
-        val config: PagedList.Config = PagedList.Config.Builder().setPageSize(pageSize).build()
-        val pagedList: PagedList<Tweet> =
-                PagedList.Builder(apiTweetsDataSource, config)
+        val livePagedList: LiveData<PagedList<Tweet>> =
+                LivePagedListBuilder(dataSourceFactory, config)
                         .setFetchExecutor(Executors.newSingleThreadExecutor())
-                        .setNotifyExecutor(object: Executor {
-
-                            private val handler: Handler = Handler(Looper.getMainLooper())
-
-                            override fun execute(r: Runnable?) {
-                                handler.post(r)
+                        .setBoundaryCallback(object : PagedList.BoundaryCallback<Tweet>() {
+                            override fun onItemAtFrontLoaded(itemAtFront: Tweet) {
+                                super.onItemAtFrontLoaded(itemAtFront)
                             }
                         })
                         .build()
 
-        return pagedList
+        return livePagedList
+    }
+
+    class ApiTweetsFactory(val userID: String,
+                           val mTwitterApi: TwitterApi,
+                           val mTwitterAuthManager: TwitterAuthManager) : DataSource.Factory<String, Tweet>() {
+
+        override fun create(): DataSource<String, Tweet> {
+            return ApiTweetsDataSource(userID, mTwitterApi, mTwitterAuthManager)
+        }
     }
 
     class ApiTweetsDataSource
-    @Inject constructor(val userID: String, val mTwitterApi: TwitterApi, val mTwitterAuthManager: TwitterAuthManager) : ItemKeyedDataSource<String, Tweet>() {
+    @Inject constructor(val userID: String,
+                        val mTwitterApi: TwitterApi,
+                        val mTwitterAuthManager: TwitterAuthManager) : ItemKeyedDataSource<String, Tweet>() {
 
         private val TAG = "ApiTweetsDataSource"
+
+        private val USER_TIMELINE_URL = "https://api.twitter.com/1.1/statuses/user_timeline.json"
 
         override fun loadInitial(params: LoadInitialParams<String>, callback: LoadInitialCallback<Tweet>) {
 
@@ -59,28 +69,20 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
             //requestParams.put("since_id", params.requestedLoadSize.toString())
             //requestParams.put("max_id", params.requestedLoadSize.toString())
 
-            val authHeader: String = mTwitterAuthManager.getOAuthHeader(TwitterAuthManager.GET, "https://api.twitter.com/1.1/statuses/user_timeline.json",
+            val authHeader: String = mTwitterAuthManager.getOAuthHeader(TwitterAuthManager.GET, USER_TIMELINE_URL,
                     null, requestParams)
-            mTwitterApi
+            val response: Response<List<Tweet>> = mTwitterApi
                     .getTimeline(authHeader, userID, params.requestedLoadSize)
-                    .enqueue(object: Callback<List<Tweet>> {
+                    .execute()
 
-                        override fun onResponse(call: Call<List<Tweet>>?, response: Response<List<Tweet>>?) {
-                            if (response?.isSuccessful == true && response.body() != null) {
+            if (response.isSuccessful && response.body() != null) {
 
-                                var tweetsList: List<Tweet> = response.body()!!;
-                                callback.onResult(tweetsList)
+                val tweetsList: List<Tweet> = response.body()!!
+                callback.onResult(tweetsList)
 
-                            } else {
-                                Log.e(TAG, "Fail to load timeline")
-                            }
-                        }
-
-                        override fun onFailure(call: Call<List<Tweet>>?, t: Throwable?) {
-                            Log.e(TAG, "Fail to load timeline", t)
-                        }
-
-                    })
+            } else {
+                Log.e(TAG, "Fail to load timeline")
+            }
         }
 
         override fun getKey(item: Tweet): String {
@@ -88,11 +90,11 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
         }
 
         override fun loadAfter(params: LoadParams<String>, callback: LoadCallback<Tweet>) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            Log.e(TAG, "loadAfter")
         }
 
         override fun loadBefore(params: LoadParams<String>, callback: LoadCallback<Tweet>) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            Log.e(TAG, "loadBefore")
         }
 
     }

@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout>
 
+    <data>
+
+        <import type="android.view.View" />
+
+        <variable
+            name="viewModel"
+            type="com.nzarudna.tweetstestapp.TimelineViewModel" />
+    </data>
+
     <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
@@ -8,15 +17,23 @@
         android:layout_height="match_parent"
         tools:context="com.nzarudna.tweetstestapp.TimelineActivity">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/tweetsRecyclerView"
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/tweetsSwipeRefreshLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:visibility="@{viewModel.authorized ? View.VISIBLE : View.GONE}">
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/tweetsRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </android.support.v4.widget.SwipeRefreshLayout>
 
         <WebView
             android:id="@+id/loginWebView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:visibility="@{!viewModel.authorized ? View.VISIBLE : View.GONE}" />
 
     </android.support.constraint.ConstraintLayout>
 </layout>

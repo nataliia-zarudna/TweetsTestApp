@@ -91,7 +91,12 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
             val response: Response<List<Tweet>> = mTwitterApi
                     .getTimelineAfter(authHeader, userID, params.requestedLoadSize, params.key)
                     .execute()
-            processResponse(response, callback)
+            processResponse(response, object: LoadCallback<Tweet>() {
+                override fun onResult(tweetsList: MutableList<Tweet>) {
+                    tweetsList.removeAt(0)
+                    callback.onResult(tweetsList)
+                }
+            })
         }
 
         override fun loadBefore(params: LoadParams<String>, callback: LoadCallback<Tweet>) {

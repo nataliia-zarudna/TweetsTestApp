@@ -14,8 +14,6 @@ import android.support.v7.util.DiffUtil
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.*
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Toast
 import com.nzarudna.tweetstestapp.BR
 import com.nzarudna.tweetstestapp.R
@@ -23,7 +21,7 @@ import com.nzarudna.tweetstestapp.TweetsTestApplication
 import com.nzarudna.tweetstestapp.databinding.FragmentTimelineBinding
 import com.nzarudna.tweetstestapp.databinding.ListItemTweetBinding
 import com.nzarudna.tweetstestapp.model.tweet.Tweet
-import kotlinx.android.synthetic.main.fragment_timeline.*
+import com.nzarudna.tweetstestapp.ui.login.LoginActivity
 import kotlinx.android.synthetic.main.fragment_timeline.view.*
 
 /**
@@ -33,6 +31,12 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
 
     lateinit var mViewModel: TimelineViewModel
     lateinit var mTweetAdapter: TweetAdapter
+
+    companion object {
+        fun newInstance(): TimelineFragment {
+            return TimelineFragment()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,11 +73,7 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         fragmentView.tweetsRecyclerView.layoutManager = LinearLayoutManager(activity)
         fragmentView.tweetsRecyclerView.adapter = mTweetAdapter
 
-        if (mViewModel.isAuthorized) {
-            loadTimeline()
-        } else {
-            mViewModel.authorize()
-        }
+        loadTimeline()
 
         return fragmentView
     }
@@ -85,8 +85,9 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         val liveDataList: LiveData<PagedList<Tweet>> = mViewModel.loadTimeline()
         liveDataList.observe(this, object : Observer<PagedList<Tweet>> {
             override fun onChanged(pagedList: PagedList<Tweet>?) {
+
                 view?.tweetsSwipeRefreshLayout?.isRefreshing = false
-                mViewModel.onTimelineLoaded()
+                //mViewModel.onTimelineLoaded()
 
                 mViewModel.mListCount = pagedList?.size ?: 0
                 mTweetAdapter.submitList(pagedList)
@@ -94,27 +95,12 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         })
     }
 
-    /**
-     * Load url in WebView
-     */
-    override fun loadURL(url: String) {
-
-        val webViewClient = object : WebViewClient() {
-
-            override fun onPageFinished(view: WebView, url: String) {
-
-                if (activity != null) {
-                    mViewModel.onWebPageFinished(url, this@TimelineFragment)
-                }
-
-                super.onPageFinished(view, url)
-            }
+    override fun onLogout() {
+        if (activity != null) {
+            startActivity(LoginActivity.newIntent(activity!!))
+            activity?.finish()
         }
-        loginWebView.setWebViewClient(webViewClient)
-        loginWebView.loadUrl(url)
     }
-
-    override fun onAuthorized() = loadTimeline()
 
     override fun onError(e: Throwable) {
         Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()

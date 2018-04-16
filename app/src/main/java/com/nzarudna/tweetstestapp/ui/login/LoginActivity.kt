@@ -1,19 +1,22 @@
-package com.nzarudna.tweetstestapp.ui.timeline
+package com.nzarudna.tweetstestapp.ui.login
 
 import android.content.Context
 import android.content.Intent
 import android.support.v4.app.Fragment
 import com.nzarudna.tweetstestapp.ui.SingleFragmentActivity
 
-class TimelineActivity : SingleFragmentActivity() {
+/**
+ * Login activity
+ */
+class LoginActivity : SingleFragmentActivity() {
 
     companion object {
         fun newIntent(context: Context): Intent {
-            return Intent(context, TimelineActivity::class.java)
+            return Intent(context, LoginActivity::class.java)
         }
     }
 
     override fun getFragmentInstance(): Fragment {
-        return TimelineFragment.newInstance()
+        return LoginFragment.newInstance()
     }
 }

@@ -1,5 +1,6 @@
 package com.nzarudna.tweetstestapp.dependency
 
+import com.nzarudna.tweetstestapp.ui.login.LoginViewModel
 import com.nzarudna.tweetstestapp.ui.timeline.TimelineViewModel
 import dagger.Component
 
@@ -10,5 +11,7 @@ import dagger.Component
 interface AppComponent {
 
     fun inject(viewModel: TimelineViewModel)
+
+    fun inject(viewModel: LoginViewModel)
 
 }

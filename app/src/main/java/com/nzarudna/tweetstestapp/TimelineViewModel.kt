@@ -54,8 +54,7 @@ class TimelineViewModel : ViewModel(), Observable {
 
     fun loadTimeline(): LiveData<PagedList<Tweet>> {
 
-        //val userID = mTwitterAuthManager.getUserID()!!
-        val userID = "44196397"
+        val userID = mTwitterAuthManager.getUserID()!!
         return mTwitterRepository.getPublicTweets(userID, PAGE_SIZE)
     }
 

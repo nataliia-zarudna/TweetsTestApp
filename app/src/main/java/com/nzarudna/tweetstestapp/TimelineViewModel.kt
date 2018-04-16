@@ -105,6 +105,7 @@ class TimelineViewModel : ViewModel(), Observable {
                 .remove(TwitterAuthManager.OAUTH_TOKEN)
                 .remove(TwitterAuthManager.OAUTH_TOKEN_SECRET)
                 .apply()
+        isAuthorized = false
     }
 
     override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {

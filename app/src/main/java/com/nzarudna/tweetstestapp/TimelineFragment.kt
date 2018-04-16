@@ -13,9 +13,7 @@ import android.support.v4.app.Fragment
 import android.support.v7.util.DiffUtil
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
@@ -32,6 +30,11 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
 
     lateinit var mViewModel: TimelineViewModel
     lateinit var mTweetAdapter: TweetAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
@@ -105,6 +108,20 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
 
     override fun onError(e: Throwable) {
         Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
+        inflater?.inflate(R.menu.menu_timeline, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        when (item?.itemId) {
+            R.id.logout_menu -> {
+                mViewModel.invalidateOauthToken()
+                return true
+            }
+            else -> return super.onOptionsItemSelected(item)
+        }
     }
 
     class TweetViewHolder(val mDataBinding: ViewDataBinding) : RecyclerView.ViewHolder(mDataBinding.root) {

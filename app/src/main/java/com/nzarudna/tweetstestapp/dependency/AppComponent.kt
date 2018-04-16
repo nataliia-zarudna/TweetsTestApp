@@ -1,6 +1,6 @@
 package com.nzarudna.tweetstestapp.dependency
 
-import com.nzarudna.tweetstestapp.TimelineViewModel
+import com.nzarudna.tweetstestapp.ui.TimelineViewModel
 import dagger.Component
 
 /**

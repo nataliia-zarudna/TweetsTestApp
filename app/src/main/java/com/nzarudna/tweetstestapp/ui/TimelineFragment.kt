@@ -1,4 +1,4 @@
-package com.nzarudna.tweetstestapp
+package com.nzarudna.tweetstestapp.ui
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.Observer
@@ -17,6 +17,9 @@ import android.view.*
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import com.nzarudna.tweetstestapp.BR
+import com.nzarudna.tweetstestapp.R
+import com.nzarudna.tweetstestapp.TweetsTestApplication
 import com.nzarudna.tweetstestapp.databinding.FragmentTimelineBinding
 import com.nzarudna.tweetstestapp.databinding.ListItemTweetBinding
 import com.nzarudna.tweetstestapp.model.tweet.Tweet
@@ -118,7 +121,7 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item?.itemId) {
             R.id.logout_menu -> {
-                mViewModel.invalidateOauthToken()
+                mViewModel.logout()
                 return true
             }
             else -> return super.onOptionsItemSelected(item)

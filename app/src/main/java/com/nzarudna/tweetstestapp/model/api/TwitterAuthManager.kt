@@ -1,9 +1,10 @@
-package com.nzarudna.tweetstestapp
+package com.nzarudna.tweetstestapp.model.api
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
 import android.util.Log
+import com.nzarudna.tweetstestapp.BuildConfig
 import retrofit2.Call
 import retrofit2.Callback
 import java.net.URLEncoder
@@ -45,6 +46,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         private const val OAUTH_NONCE_HEADER = "oauth_nonce"
         private const val OAUTH_VERSION_HEADER = "oauth_version"
         private const val OAUTH_VERSION_VALUE = "1.0"
+        private const val OAUTH_ACCESS_TOKEN_PARAM = "access_token"
 
         const val OAUTH_TOKEN = "oauth_token"
         const val OAUTH_TOKEN_SECRET = "oauth_token_secret"
@@ -66,13 +68,11 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         }
     }
 
-    fun getRequestToken(obtainAuthTokenListener: ObtainAuthTokenListener) {
+    fun getRequestToken(authCallListener: AuthCallListener) {
 
         val additionalHeaders = HashMap<String, String>()
         additionalHeaders.put(OAUTH_CALLBACK_HEADER, BuildConfig.CALLBACK_URL)
         val oauthHeaders: String = getOAuthHeader(POST, AUTH_REQUEST_TOKEN_URL, additionalHeaders, null)
-
-        Log.d(TAG, "Oaut header: " + oauthHeaders)
 
         mTwitterApi
                 .getRequestToken(oauthHeaders)
@@ -81,28 +81,29 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                     override fun onResponse(call: Call<String>?, response: retrofit2.Response<String>?) {
                         if (response?.isSuccessful == true && response.body() != null) {
                             val oauthToken = getResponseParamValue(response.body()!!, OAUTH_TOKEN_HEADER)
-                            obtainAuthTokenListener.onObtainToken(oauthToken)
+                            authCallListener.onSuccess(oauthToken)
                         } else {
                             Log.e(TAG, response?.errorBody()?.string())
-                            obtainAuthTokenListener.onError(OAuthException("Empty request token"))
+                            authCallListener.onError(OAuthException("Empty request token"))
                         }
                     }
 
                     override fun onFailure(call: Call<String>?, t: Throwable?) {
-                        obtainAuthTokenListener.onError(OAuthException("Cannot obtain request token", t))
+                        Log.e(TAG, "Error on obtain request token", t)
+                        authCallListener.onError(OAuthException("Cannot obtain request token", t))
                     }
 
                 })
     }
 
-    fun getAuthToken(callbackResultURL: String, obtainAuthTokenListener: ObtainAuthTokenListener) {
+    fun getAuthToken(callbackResultURL: String, authCallListener: AuthCallListener) {
 
         val urlParams = callbackResultURL.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
 
         val oauthToken: String? = getResponseParamValue(urlParams, OAUTH_TOKEN_HEADER)
         val oauthVerifier: String? = getResponseParamValue(urlParams, OAUTH_VERIFIER_HEADER)
         if (oauthToken == null || oauthVerifier == null) {
-            obtainAuthTokenListener.onError(OAuthException("$OAUTH_TOKEN_HEADER or $OAUTH_VERIFIER_HEADER is empty"))
+            authCallListener.onError(OAuthException("${OAUTH_TOKEN_HEADER} or ${OAUTH_VERIFIER_HEADER} is empty"))
             return
         }
 
@@ -129,15 +130,16 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                                     .putString(SCREEN_NAME, getResponseParamValue(responseBody, SCREEN_NAME))
                                     .apply()
 
-                            obtainAuthTokenListener.onObtainToken(oauthVerifier)
+                            authCallListener.onSuccess(oauthVerifier)
                         } else {
                             Log.e(TAG, response?.errorBody()?.string())
-                            obtainAuthTokenListener.onError(OAuthException("Empty request token"))
+                            authCallListener.onError(OAuthException("Empty request token"))
                         }
                     }
 
                     override fun onFailure(call: Call<String>?, t: Throwable?) {
-                        obtainAuthTokenListener.onError(OAuthException("Cannot obtain oauth token", t))
+                        Log.e(TAG, "Error on obtain auth token", t)
+                        authCallListener.onError(OAuthException("Cannot obtain oauth token", t))
                     }
                 })
     }
@@ -154,7 +156,6 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         Log.d(TAG, "timestamp " + timestamp)
         oauthHeaders.put(OAUTH_TIMESTAMP_HEADER, timestamp)
 
-        //val nonce = String(Base64.encode(Math.random().toString().toByteArray(), Base64.DEFAULT))
         val nonce = URLEncoder.encode((Date().time / 1000 * 2).toString())
         Log.d(TAG, "nonce " + nonce)
         oauthHeaders.put(OAUTH_NONCE_HEADER, nonce.trim())
@@ -246,7 +247,7 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
     }
 
     fun getAuthenticateURL(oauthToken: String): String {
-        return "$AUTHENTICATE_URL?$OAUTH_TOKEN_HEADER=$oauthToken"
+        return "${AUTHENTICATE_URL}?${OAUTH_TOKEN_HEADER}=$oauthToken"
     }
 
     private fun glueParams(params: Map<String, String>): String {
@@ -277,9 +278,9 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         return null
     }
 
-    interface ObtainAuthTokenListener {
+    interface AuthCallListener {
 
-        fun onObtainToken(authToken: String?)
+        fun onSuccess(result: String?)
 
         fun onError(e: Throwable)
     }

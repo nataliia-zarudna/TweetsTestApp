@@ -1,8 +1,9 @@
-package com.nzarudna.tweetstestapp
+package com.nzarudna.tweetstestapp.ui
 
 import android.databinding.BaseObservable
 import android.databinding.Bindable
 import android.databinding.PropertyChangeRegistry
+import com.nzarudna.tweetstestapp.BR
 import com.nzarudna.tweetstestapp.model.tweet.Tweet
 import java.text.SimpleDateFormat
 

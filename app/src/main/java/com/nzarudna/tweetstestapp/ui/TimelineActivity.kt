@@ -1,7 +1,8 @@
-package com.nzarudna.tweetstestapp
+package com.nzarudna.tweetstestapp.ui
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import com.nzarudna.tweetstestapp.R
 
 class TimelineActivity : AppCompatActivity() {
 

@@ -1,4 +1,4 @@
-package com.nzarudna.tweetstestapp
+package com.nzarudna.tweetstestapp.model.api
 
 /**
  * Created by Nataliia on 12.04.2018.

@@ -1,4 +1,4 @@
-package com.nzarudna.tweetstestapp
+package com.nzarudna.tweetstestapp.model.api
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder

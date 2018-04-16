@@ -1,4 +1,4 @@
-package com.nzarudna.tweetstestapp
+package com.nzarudna.tweetstestapp.ui
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.ViewModel
@@ -7,6 +7,10 @@ import android.databinding.Bindable
 import android.databinding.Observable
 import android.databinding.PropertyChangeRegistry
 import android.util.Log
+import com.nzarudna.tweetstestapp.BR
+import com.nzarudna.tweetstestapp.BuildConfig
+import com.nzarudna.tweetstestapp.model.api.OAuthException
+import com.nzarudna.tweetstestapp.model.api.TwitterAuthManager
 import com.nzarudna.tweetstestapp.model.tweet.Tweet
 import com.nzarudna.tweetstestapp.model.tweet.TweetRepository
 import javax.inject.Inject
@@ -72,9 +76,9 @@ class TimelineViewModel : ViewModel(), Observable {
     fun authorize() {
         isAuthenticating = true
 
-        mTwitterAuthManager.getRequestToken(object : TwitterAuthManager.ObtainAuthTokenListener {
+        mTwitterAuthManager.getRequestToken(object : TwitterAuthManager.AuthCallListener {
 
-            override fun onObtainToken(authToken: String?) {
+            override fun onSuccess(authToken: String?) {
                 if (authToken == null) {
                     mObserver?.onError(OAuthException("OAuth token is empty"))
                     return
@@ -95,9 +99,9 @@ class TimelineViewModel : ViewModel(), Observable {
     fun onWebPageFinished(url: String, observer: TimelineViewModelObserver?) {
 
         if (url.startsWith(BuildConfig.CALLBACK_URL)) {
-            mTwitterAuthManager.getAuthToken(url, object : TwitterAuthManager.ObtainAuthTokenListener {
+            mTwitterAuthManager.getAuthToken(url, object : TwitterAuthManager.AuthCallListener {
 
-                override fun onObtainToken(authToken: String?) {
+                override fun onSuccess(authToken: String?) {
                     isAuthenticating = false
                     observer?.onAuthorized()
 
@@ -114,7 +118,7 @@ class TimelineViewModel : ViewModel(), Observable {
         }
     }
 
-    fun invalidateOauthToken() {
+    fun logout() {
         mTwitterAuthManager.mSharedPreferences.edit()
                 .remove(TwitterAuthManager.USER_ID)
                 .remove(TwitterAuthManager.OAUTH_TOKEN)

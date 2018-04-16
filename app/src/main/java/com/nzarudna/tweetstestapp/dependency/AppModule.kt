@@ -3,8 +3,8 @@ package com.nzarudna.tweetstestapp.dependency
 import android.content.Context
 import android.content.SharedPreferences
 import com.nzarudna.tweetstestapp.R
-import com.nzarudna.tweetstestapp.TwitterApi
-import com.nzarudna.tweetstestapp.TwitterAuthManager
+import com.nzarudna.tweetstestapp.model.api.TwitterApi
+import com.nzarudna.tweetstestapp.model.api.TwitterAuthManager
 import com.nzarudna.tweetstestapp.model.tweet.TweetRepository
 import dagger.Module
 import dagger.Provides

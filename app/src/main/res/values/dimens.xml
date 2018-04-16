@@ -3,4 +3,7 @@
     <dimen name="defaultMargin">16dp</dimen>
     <dimen name="titleSize">16sp</dimen>
     <dimen name="subtextSize">14sp</dimen>
+
+    <dimen name="btn_corner_radius">5dp</dimen>
+    <dimen name="btn_padding">10dp</dimen>
 </resources>

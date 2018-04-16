@@ -1,4 +1,4 @@
-package com.nzarudna.tweetstestapp.ui
+package com.nzarudna.tweetstestapp.ui.timeline
 
 import android.databinding.BaseObservable
 import android.databinding.Bindable
@@ -8,7 +8,7 @@ import com.nzarudna.tweetstestapp.model.tweet.Tweet
 import java.text.SimpleDateFormat
 
 /**
- * Created by nsirobaba on 4/13/18.
+ * View model for one tweet item in list
  */
 class TweetItemViewModel : BaseObservable() {
 

@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 import java.util.*
 
 /**
- * Created by Nataliia on 13.04.2018.
+ * Tweet model
  */
 data class Tweet(
 

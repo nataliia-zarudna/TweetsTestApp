@@ -10,7 +10,7 @@ import dagger.Module
 import dagger.Provides
 
 /**
- * Created by Nataliia on 12.04.2018.
+ * Dagger app module to provide objects for DI
  */
 @Module
 class AppModule(var mContext: Context) {

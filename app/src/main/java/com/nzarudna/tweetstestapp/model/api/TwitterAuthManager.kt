@@ -18,7 +18,7 @@ import javax.inject.Singleton
 import kotlin.collections.HashMap
 
 /**
- * Created by Nataliia on 12.04.2018.
+ * Manage twitter authentication
  */
 @Singleton
 class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPreferences,
@@ -46,7 +46,6 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         private const val OAUTH_NONCE_HEADER = "oauth_nonce"
         private const val OAUTH_VERSION_HEADER = "oauth_version"
         private const val OAUTH_VERSION_VALUE = "1.0"
-        private const val OAUTH_ACCESS_TOKEN_PARAM = "access_token"
 
         const val OAUTH_TOKEN = "oauth_token"
         const val OAUTH_TOKEN_SECRET = "oauth_token_secret"
@@ -54,12 +53,20 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         private const val SCREEN_NAME = "screen_name"
     }
 
+    /**
+     * Determine whether current user is authorized
+     * @return true if authorized, false - if not
+     */
     fun isAuthorized(): Boolean {
         return mSharedPreferences.contains(OAUTH_TOKEN)
                 && mSharedPreferences.contains(OAUTH_TOKEN_SECRET)
                 && mSharedPreferences.contains(USER_ID)
     }
 
+    /**
+     * Get current user id
+     * @return user id or null
+     */
     fun getUserID(): String? {
         if (isAuthorized()) {
             return mSharedPreferences.getString(USER_ID, "")
@@ -68,6 +75,10 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         }
     }
 
+    /**
+     * Obtain request token to progress with user authorization
+     * @param authCallListener request result listener
+     */
     fun getRequestToken(authCallListener: AuthCallListener) {
 
         val additionalHeaders = HashMap<String, String>()
@@ -96,7 +107,12 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                 })
     }
 
-    fun getAuthToken(callbackResultURL: String, authCallListener: AuthCallListener) {
+    /**
+     * Obtain access token token to complete user authorization
+     * @param callbackResultURL callback url
+     * @param authCallListener request result listener
+     */
+    fun getOAuthToken(callbackResultURL: String, authCallListener: AuthCallListener) {
 
         val urlParams = callbackResultURL.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
 
@@ -144,6 +160,15 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
                 })
     }
 
+    /**
+     * Generate authorization OAuth header with signature
+     * @param method http method
+     * @param url request url
+     * @param additionalHeaders header to add to default oauth headers
+     * @param requestParams request params
+     *
+     * @return header string
+     */
     fun getOAuthHeader(method: String, url: String, additionalHeaders: Map<String, String>?,
                        requestParams: Map<String, String>?): String {
 
@@ -278,6 +303,9 @@ class TwitterAuthManager @Inject constructor(val mSharedPreferences: SharedPrefe
         return null
     }
 
+    /**
+     * Listener of authorization request results
+     */
     interface AuthCallListener {
 
         fun onSuccess(result: String?)

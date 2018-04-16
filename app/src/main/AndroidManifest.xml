@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:name=".TweetsTestApplication"
         android:theme="@style/AppTheme">
-        <activity android:name=".ui.TimelineActivity">
+        <activity android:name=".ui.timeline.TimelineActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

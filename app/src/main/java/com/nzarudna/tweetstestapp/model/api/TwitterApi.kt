@@ -10,7 +10,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.*
 
 /**
- * Created by Nataliia on 13.04.2018.
+ * Makes requests to twitter api
  */
 public interface TwitterApi {
 

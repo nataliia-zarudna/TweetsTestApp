@@ -1,4 +1,4 @@
-package com.nzarudna.tweetstestapp.ui
+package com.nzarudna.tweetstestapp.ui.timeline
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.Observer
@@ -27,7 +27,7 @@ import kotlinx.android.synthetic.main.fragment_timeline.*
 import kotlinx.android.synthetic.main.fragment_timeline.view.*
 
 /**
- * Created by Nataliia on 11.04.2018.
+ * Fragment with twitter timeline
  */
 class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver {
 
@@ -78,6 +78,9 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         return fragmentView
     }
 
+    /**
+     * Load current user's timeline
+     */
     fun loadTimeline() {
         val liveDataList: LiveData<PagedList<Tweet>> = mViewModel.loadTimeline()
         liveDataList.observe(this, object : Observer<PagedList<Tweet>> {
@@ -91,6 +94,9 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         })
     }
 
+    /**
+     * Load url in WebView
+     */
     override fun loadURL(url: String) {
 
         val webViewClient = object : WebViewClient() {
@@ -154,6 +160,5 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
             val tweet: Tweet? = getItem(position)
             holder.bind(tweet)
         }
-
     }
 }

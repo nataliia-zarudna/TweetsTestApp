@@ -1,10 +1,10 @@
 package com.nzarudna.tweetstestapp.dependency
 
-import com.nzarudna.tweetstestapp.ui.TimelineViewModel
+import com.nzarudna.tweetstestapp.ui.timeline.TimelineViewModel
 import dagger.Component
 
 /**
- * Created by Nataliia on 12.04.2018.
+ * Dagger application component
  */
 @Component(modules = arrayOf(AppModule::class))
 interface AppComponent {

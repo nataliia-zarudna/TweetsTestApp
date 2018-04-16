@@ -1,4 +1,4 @@
-package com.nzarudna.tweetstestapp.ui
+package com.nzarudna.tweetstestapp.ui.timeline
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity

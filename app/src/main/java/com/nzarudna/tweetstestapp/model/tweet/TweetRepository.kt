@@ -14,7 +14,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Created by Nataliia on 13.04.2018.
+ * Repository of user tweets
  */
 @Singleton
 class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthManager,
@@ -22,6 +22,13 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
 
     private val TAG = "TweetRepository"
 
+    /**
+     * Load public user tweets to LiveData of tweets PagedList
+     * @param userID user id to load tweets for
+     * @param pageSize number of items loaded at once from the DataSource
+     *
+     * @return LiveData of tweets PagedList
+     */
     fun getPublicTweets(userID: String, pageSize: Int): LiveData<PagedList<Tweet>> {
 
         val dataSourceFactory = ApiTweetsFactory(userID, mTwitterApi, mTwitterAuthManager)
@@ -43,6 +50,9 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
         return livePagedList
     }
 
+    /**
+     * Data source factory for load paging tweets list
+     */
     class ApiTweetsFactory(val userID: String,
                            val mTwitterApi: TwitterApi,
                            val mTwitterAuthManager: TwitterAuthManager) : DataSource.Factory<String, Tweet>() {
@@ -52,6 +62,9 @@ class TweetRepository @Inject constructor(val mTwitterAuthManager: TwitterAuthMa
         }
     }
 
+    /**
+     * Data source for load paging tweets list
+     */
     class ApiTweetsDataSource
     @Inject constructor(val userID: String,
                         val mTwitterApi: TwitterApi,

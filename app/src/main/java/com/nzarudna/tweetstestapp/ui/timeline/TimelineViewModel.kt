@@ -1,4 +1,4 @@
-package com.nzarudna.tweetstestapp.ui
+package com.nzarudna.tweetstestapp.ui.timeline
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.ViewModel
@@ -16,7 +16,7 @@ import com.nzarudna.tweetstestapp.model.tweet.TweetRepository
 import javax.inject.Inject
 
 /**
- * Created by Nataliia on 12.04.2018.
+ * View model for user timeline
  */
 class TimelineViewModel : ViewModel(), Observable {
 
@@ -99,7 +99,7 @@ class TimelineViewModel : ViewModel(), Observable {
     fun onWebPageFinished(url: String, observer: TimelineViewModelObserver?) {
 
         if (url.startsWith(BuildConfig.CALLBACK_URL)) {
-            mTwitterAuthManager.getAuthToken(url, object : TwitterAuthManager.AuthCallListener {
+            mTwitterAuthManager.getOAuthToken(url, object : TwitterAuthManager.AuthCallListener {
 
                 override fun onSuccess(authToken: String?) {
                     isAuthenticating = false

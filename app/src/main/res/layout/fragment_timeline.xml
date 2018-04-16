@@ -36,15 +36,25 @@
             android:background="@android:color/holo_blue_dark"
             android:visibility="@{(!viewModel.authorized &amp;&amp; viewModel.authenticating) ? View.VISIBLE : View.GONE}" />
 
+        <ProgressBar
+            android:id="@+id/loginProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="@{viewModel.progressBarVisible ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <Button
             android:id="@+id/loginButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:background="@drawable/login_btn"
             android:onClick="@{() -> viewModel.authorize()}"
             android:text="@string/login_to_twitter"
             android:textColor="@android:color/white"
             android:textStyle="bold"
-            android:background="@drawable/login_btn"
             android:visibility="@{(!viewModel.authorized &amp;&amp; !viewModel.authenticating) ? View.VISIBLE : View.GONE}"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

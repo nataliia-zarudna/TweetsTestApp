@@ -52,10 +52,21 @@ class TimelineViewModel : ViewModel(), Observable {
             mRegistry.notifyChange(this, BR._all)
         }
 
+    @Bindable
+    var isProgressBarVisible: Boolean = true
+        set(value) {
+            field = value
+            mRegistry.notifyChange(this, BR._all)
+        }
+
     fun loadTimeline(): LiveData<PagedList<Tweet>> {
 
         val userID = mTwitterAuthManager.getUserID()!!
         return mTwitterRepository.getPublicTweets(userID, PAGE_SIZE)
+    }
+
+    fun onTimelineLoaded() {
+        isProgressBarVisible = false
     }
 
     fun authorize() {
@@ -68,6 +79,7 @@ class TimelineViewModel : ViewModel(), Observable {
                     mObserver?.onError(OAuthException("OAuth token is empty"))
                     return
                 }
+                isProgressBarVisible = false
 
                 val authURL: String = mTwitterAuthManager.getAuthenticateURL(authToken)
                 mObserver?.loadURL(authURL)
@@ -88,11 +100,15 @@ class TimelineViewModel : ViewModel(), Observable {
                 override fun onObtainToken(authToken: String?) {
                     isAuthenticating = false
                     observer?.onAuthorized()
+
+                    isProgressBarVisible = true
                 }
 
                 override fun onError(e: Throwable) {
                     isAuthenticating = false
                     observer?.onError(e)
+
+                    isProgressBarVisible = true
                 }
             })
         }

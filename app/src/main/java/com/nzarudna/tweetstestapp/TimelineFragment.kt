@@ -80,6 +80,7 @@ class TimelineFragment : Fragment(), TimelineViewModel.TimelineViewModelObserver
         liveDataList.observe(this, object : Observer<PagedList<Tweet>> {
             override fun onChanged(pagedList: PagedList<Tweet>?) {
                 view?.tweetsSwipeRefreshLayout?.isRefreshing = false
+                mViewModel.onTimelineLoaded()
 
                 mViewModel.mListCount = pagedList?.size ?: 0
                 mTweetAdapter.submitList(pagedList)
